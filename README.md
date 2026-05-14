@@ -18,6 +18,14 @@
 - 静态诊断前端
 - 校准入口 `verify` / `probe` / `steer-zero` / `drive-direction`
 
+## 文档入口
+
+- 使用教程：`docs/USAGE_TUTORIAL.md`
+- 控制方式说明：`docs/CONTROL_GUIDE.md`
+- 现场检查清单：`docs/FIELD_CHECKLIST.md`
+- 架构说明：`docs/ARCHITECTURE.md`
+- 后续扩展机械臂、升降台：`docs/EXPANSION_GUIDE.md`
+
 ## 真机启动
 
 真机常用命令是一行：
@@ -98,3 +106,4 @@ http://127.0.0.1:8765/
 - Python 版仍然更适合快速试验和写测试
 - stable 版更适合交付、现场运行和真机前检查
 - 真机硬件还需要在 ARM Ubuntu + USB-CANFD 环境确认
+- 后续如果加机械臂、升降台，建议放到上一级 `robot_platform/arm`、`robot_platform/lift`，不要直接塞进底盘控制循环

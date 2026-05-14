@@ -22,6 +22,22 @@ C++ 核心负责：
 - 达妙硬件下发
 - JSONL 遥测
 
+## 后续扩展边界
+
+当前 C++ 核心只应该负责底盘实时控制。后续如果加机械臂、升降台、云台或传感器，建议在上一级整机工程里分模块管理：
+
+```text
+robot_platform/
+  chassis/car_control_stable/
+  arm/
+  lift/
+  sensors/
+  supervisor/
+  dashboard/
+```
+
+`supervisor` 负责整机任务调度和安全互锁，底盘、机械臂、升降台各自保持独立控制循环。这样机械臂故障不会把底盘控制代码拖复杂，底盘实时循环也不会被非底盘动作阻塞。
+
 ## Python 工具
 
 Python 保留在非实时链路：
