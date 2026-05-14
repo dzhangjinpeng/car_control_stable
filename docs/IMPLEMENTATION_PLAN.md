@@ -31,6 +31,10 @@ car_control_core --mock --max-loops 1000
 - 最大循环耗时。
 - JSONL 遥测。
 
+状态：已完成第一版 mock 核心，后续可以继续补测试和更完整的模式拆分。
+
+当前 Windows 中文路径下，MinGW Makefiles 可能无法正确处理源文件路径；已提供 `core_cpp/build.ps1` 作为直接 `g++` 编译入口。板端或英文路径下仍优先使用 CMake。
+
 ## 阶段 2：安全和 mode2
 
 目标：
@@ -87,4 +91,3 @@ car_control_core --mock --max-loops 1000
 
 - 可以看到 input / target / actual / error。
 - 可以定位输入、控制、硬件、机械层问题。
-

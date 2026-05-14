@@ -9,6 +9,6 @@ build/
 __pycache__/
 .pytest_cache/
 logs/
+*.jsonl
 dist/
 node_modules/
-

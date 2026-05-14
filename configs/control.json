@@ -1,0 +1,10 @@
+{
+  "loop_period_s": 0.002,
+  "deadzone": 0.05,
+  "max_linear_speed_mps": 0.15,
+  "max_steering_degrees": 12.0,
+  "wheel_radius_m": 0.0855,
+  "gear_ratio": 3.0,
+  "steering_motor_speed_limit_rad_s": 1.5
+}
+

@@ -1,0 +1,6 @@
+{
+  "require_mock_for_now": true,
+  "max_drive_motor_speed_rad_s": 3.0,
+  "max_steer_motor_position_rad": 1.2
+}
+

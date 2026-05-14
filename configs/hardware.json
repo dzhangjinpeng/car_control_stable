@@ -1,0 +1,6 @@
+{
+  "drive_motor_ids": [1, 2, 3, 4],
+  "steer_motor_ids": [5, 6, 7, 8],
+  "inverted_drive_motor_ids": [2, 3]
+}
+
