@@ -1,5 +1,5 @@
 {
-  "_comment": "控制档位配置。C++ 核心可用 --control-profile conservative|normal|sport 选择这些覆盖项。",
+  "_comment": "启动参数预设。它不是手柄档位，只是在启动前限制速度、转向降速等控制参数。",
   "conservative": {
     "max_linear_speed_mps": 0.35,
     "mode2_speed_scale": 0.2,
