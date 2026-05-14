@@ -59,6 +59,10 @@ struct LoopTelemetry {
     double loop_duration_ms = 0.0;
     std::string mode = "mode2_safe_debug";
     std::string input_source = "neutral";
+    std::string input_link_state = "local";
+    int remote_seq = -1;
+    double remote_latency_s = -1.0;
+    bool remote_stale = false;
     DriverInput input;
     MotorCommand command;
     SafetyState safety;

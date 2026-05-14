@@ -173,6 +173,22 @@ InputConfig load_input_config(const std::string& path) {
     return config;
 }
 
+NetworkConfig load_network_config(const std::string& path) {
+    NetworkConfig config;
+    const std::string text = read_text_if_exists(path);
+    if (text.empty()) {
+        return config;
+    }
+    config.bind_host = string_value(text, "bind_host", config.bind_host);
+    config.port = static_cast<int>(number_value(text, "port", config.port));
+    config.timeout_s = number_value(text, "timeout_s", config.timeout_s);
+    config.poll_timeout_s = number_value(text, "poll_timeout_s", config.poll_timeout_s);
+    if (config.port <= 0 || config.port > 65535) {
+        throw std::runtime_error("network.port must be in 1..65535");
+    }
+    return config;
+}
+
 bool contains_int(const std::vector<int>& values, int value) {
     for (const int item : values) {
         if (item == value) {

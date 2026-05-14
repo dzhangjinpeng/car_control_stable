@@ -49,16 +49,25 @@ struct InputConfig {
     int emergency_stop_button = 6;
 };
 
+struct NetworkConfig {
+    std::string bind_host = "0.0.0.0";
+    int port = 23333;
+    double timeout_s = 0.2;
+    double poll_timeout_s = 0.0;
+};
+
 struct AppConfig {
     ControlConfig control;
     HardwareConfig hardware;
     SafetyConfig safety;
     InputConfig input;
+    NetworkConfig network;
 };
 
 ControlConfig load_control_config(const std::string& path);
 HardwareConfig load_hardware_config(const std::string& path);
 SafetyConfig load_safety_config(const std::string& path);
 InputConfig load_input_config(const std::string& path);
+NetworkConfig load_network_config(const std::string& path);
 
 bool contains_int(const std::vector<int>& values, int value);

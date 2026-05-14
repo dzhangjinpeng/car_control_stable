@@ -11,24 +11,28 @@
       background: #f4f6f7;
       color: #182026;
     }
+    * { box-sizing: border-box; }
     body { margin: 0; }
     header {
       display: flex;
       align-items: center;
       justify-content: space-between;
+      gap: 14px;
       padding: 16px 22px;
       background: #ffffff;
       border-bottom: 1px solid #d9e0e4;
     }
-    h1 { margin: 0; font-size: 20px; }
-    h2 { margin: 0 0 12px; font-size: 17px; }
+    h1 { margin: 0; font-size: 20px; letter-spacing: 0; }
+    h2 { margin: 0 0 12px; font-size: 17px; letter-spacing: 0; }
     nav { display: flex; gap: 8px; flex-wrap: wrap; }
     button {
+      min-height: 36px;
       border: 1px solid #cfd8de;
       background: #ffffff;
       border-radius: 6px;
       padding: 8px 12px;
       cursor: pointer;
+      white-space: nowrap;
     }
     button.active { background: #1f6f8b; color: #ffffff; border-color: #1f6f8b; }
     main { padding: 18px 22px; display: grid; gap: 16px; }
@@ -41,7 +45,7 @@
       padding: 14px;
     }
     .metric span { display: block; color: #667782; font-size: 13px; }
-    .metric strong { display: block; margin-top: 6px; font-size: 18px; }
+    .metric strong { display: block; margin-top: 6px; font-size: 18px; word-break: break-word; }
     table { width: 100%; border-collapse: collapse; font-size: 14px; }
     th, td { padding: 8px; border-bottom: 1px solid #e5eaed; text-align: left; vertical-align: top; }
     th { color: #50616b; font-weight: 600; }
@@ -75,7 +79,7 @@
   <header>
     <div>
       <h1>小车稳定版诊断</h1>
-      <div class="muted" id="updated">等待数据</div>
+      <div class="muted" id="updated">等待遥测数据</div>
     </div>
     <nav>
       <button class="active" data-page="dashboard">总览</button>
@@ -89,8 +93,14 @@
       <div class="grid">
         <div class="panel metric"><span>模式</span><strong id="mode">-</strong></div>
         <div class="panel metric"><span>输入源</span><strong id="inputSource">-</strong></div>
+        <div class="panel metric"><span>输入链路</span><strong id="inputLink">-</strong></div>
         <div class="panel metric"><span>循环</span><strong id="loopIndex">-</strong></div>
+      </div>
+      <div class="grid">
         <div class="panel metric"><span>急停</span><strong id="estop">-</strong></div>
+        <div class="panel metric"><span>远程序号</span><strong id="remoteSeq">-</strong></div>
+        <div class="panel metric"><span>远程延迟</span><strong id="remoteLatency">-</strong></div>
+        <div class="panel metric"><span>远程过期</span><strong id="remoteStale">-</strong></div>
       </div>
       <div class="panel">
         <h2>驾驶输入</h2>
@@ -117,7 +127,9 @@
         <div class="panel"><h2>硬件配置</h2><pre id="hardwareConfig">-</pre></div>
         <div class="panel"><h2>控制配置</h2><pre id="controlConfig">-</pre></div>
         <div class="panel"><h2>输入配置</h2><pre id="inputConfig">-</pre></div>
+        <div class="panel"><h2>网络配置</h2><pre id="networkConfig">-</pre></div>
         <div class="panel"><h2>安全配置</h2><pre id="safetyConfig">-</pre></div>
+        <div class="panel"><h2>控制档案</h2><pre id="profileConfig">-</pre></div>
       </div>
     </section>
     <section class="page" id="calibration">
@@ -129,7 +141,7 @@
     <section class="page" id="history">
       <div class="panel">
         <h2>最近遥测</h2>
-        <table><thead><tr><th>循环</th><th>模式</th><th>输入源</th><th>急停</th><th>首个驱动目标</th></tr></thead><tbody id="historyRows"></tbody></table>
+        <table><thead><tr><th>循环</th><th>模式</th><th>输入</th><th>链路</th><th>急停</th><th>首个驱动目标</th></tr></thead><tbody id="historyRows"></tbody></table>
       </div>
     </section>
   </main>
@@ -157,7 +169,11 @@
       if (!data) return;
       document.getElementById('mode').textContent = data.mode || '-';
       document.getElementById('inputSource').textContent = data.input_source || '-';
+      document.getElementById('inputLink').textContent = data.input_link_state || '-';
       document.getElementById('loopIndex').textContent = data.loop_index ?? '-';
+      document.getElementById('remoteSeq').textContent = data.remote_seq ?? '-';
+      document.getElementById('remoteLatency').textContent = data.remote_latency_s >= 0 ? `${fmt(data.remote_latency_s)} s` : '-';
+      document.getElementById('remoteStale').textContent = data.remote_stale ? '是' : '否';
       const estop = Boolean(data.safety && data.safety.emergency_stop);
       const estopEl = document.getElementById('estop');
       estopEl.textContent = estop ? '已触发' : '未触发';
@@ -175,7 +191,9 @@
       document.getElementById('hardwareConfig').textContent = pretty(await api('/api/v1/config/hardware'));
       document.getElementById('controlConfig').textContent = pretty(await api('/api/v1/config/control'));
       document.getElementById('inputConfig').textContent = pretty(await api('/api/v1/config/input'));
+      document.getElementById('networkConfig').textContent = pretty(await api('/api/v1/config/network'));
       document.getElementById('safetyConfig').textContent = pretty(await api('/api/v1/config/safety'));
+      document.getElementById('profileConfig').textContent = pretty(await api('/api/v1/config/profiles'));
     }
     async function refreshCalibration() {
       document.getElementById('calibrationReport').textContent = pretty(await api('/api/v1/calibration/latest'));
@@ -184,7 +202,8 @@
       const history = await api('/api/v1/telemetry/history?limit=50') || [];
       document.getElementById('historyRows').innerHTML = history.slice().reverse().map((frame) => {
         const first = frame.drive_motors && frame.drive_motors[0];
-        return `<tr><td>${frame.loop_index}</td><td>${frame.mode}</td><td>${frame.input_source}</td><td>${frame.safety && frame.safety.emergency_stop ? '是' : '否'}</td><td>${first ? fmt(first.target) : '-'}</td></tr>`;
+        const estop = frame.safety && frame.safety.emergency_stop ? '是' : '否';
+        return `<tr><td>${frame.loop_index}</td><td>${frame.mode}</td><td>${frame.input_source}</td><td>${frame.input_link_state || '-'}</td><td>${estop}</td><td>${first ? fmt(first.target) : '-'}</td></tr>`;
       }).join('');
     }
     async function refreshAll() {

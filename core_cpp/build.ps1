@@ -19,7 +19,14 @@ $Sources = @(
 
 Push-Location $Root
 try {
-    & g++ -std=c++17 -O2 -Wall -Wextra -Icore_cpp\src @Sources -o $OutExe
+    $LinkArgs = @()
+    if ($IsWindows -or $env:OS -eq "Windows_NT") {
+        $LinkArgs += "-lws2_32"
+    }
+    & g++ -std=c++17 -O2 -Wall -Wextra -Icore_cpp\src @Sources -o $OutExe @LinkArgs
+    if ($LASTEXITCODE -ne 0) {
+        throw "g++ failed with exit code $LASTEXITCODE"
+    }
 }
 finally {
     Pop-Location

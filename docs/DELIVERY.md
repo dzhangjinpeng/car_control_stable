@@ -1,157 +1,51 @@
 # 交付说明
 
-## 当前交付内容
-
-这个目录已经是独立项目：
+## 当前交付物
 
 ```text
 car_control_stable/
   configs/       运行配置
   core_cpp/      C++ 控制核心
-  docs/          文档
-  scripts/       构建和运行脚本
+  docs/          架构与现场说明
+  frontend/      只读诊断前端
+  scripts/       构建、运行、校准脚本
+  tools_python/  API 和远程输入工具
 ```
 
-当前可交付能力：
+## 已有能力
 
-- C++ 固定周期控制核心。
-- mock 电机客户端。
-- 达妙硬件客户端。
-- `mode0` 原地旋转模式。
-- `mode1` 阿克曼转向模式。
-- `mode2` 低速安全调试模式。
-- `neutral` / `demo` / Linux `gamepad` 输入。
-- 急停输入归零。
-- 驱动速度限幅。
-- 转向角限幅。
-- JSONL 遥测。
-- 只读遥测 API。
-- 静态诊断前端。
-- Windows mock 编译脚本。
-- Linux/ARM 板端硬件构建脚本。
+- 固定周期控制循环
+- mock 电机客户端
+- 达妙硬件客户端
+- `mode0` / `mode1` / `mode2`
+- `neutral` / `demo` / `gamepad` / `remote` / `hybrid`
+- JSONL 遥测
+- 只读 API
+- 前端总览、配置、校准、历史
+- 远程控制发送器
+- `verify` / `probe` / `steer-zero` / `drive-direction`
 
-## Windows 本地验证
+## 本地验证顺序
 
 ```powershell
-cd F:\公司\小车\car_control_stable
 .\core_cpp\build.ps1
-.\build\manual\car_control_core.exe --mock --input demo --mode mode2 --max-loops 1000 --telemetry-file telemetry.jsonl
-```
-
-也可以一条命令：
-
-```powershell
-.\scripts\run_mock.ps1
-```
-
-启动诊断页面：
-
-```powershell
+.\build\manual\car_control_core.exe --mock --input demo --mode mode2 --max-loops 1000 --telemetry-file logs\mock_telemetry.jsonl
 .\scripts\run_api.ps1
+.\scripts\send_remote_demo.ps1
 ```
 
-浏览器打开：
+## 真机前检查
 
-```text
-http://127.0.0.1:8765/
-```
+- 车轮架空
+- 急停可用
+- 电机 ID 和反向列表确认过
+- `/dev/input/js0` 或手柄设备路径正确
+- 达妙串口和 CANFD 连接正常
 
-生成 mock 校准报告：
+## 校准流程
 
 ```powershell
-.\scripts\calibrate_mock.ps1
+.\build\manual\car_control_core.exe --mock --calibrate verify --report-file logs\calibration.json
+.\build\manual\car_control_core.exe --mock --calibrate drive-direction --report-file logs\drive_calibration.json
+.\build\manual\car_control_core.exe --mock --calibrate steer-zero --yes --save-flash
 ```
-
-## 打包
-
-```powershell
-.\scripts\package_release.ps1
-```
-
-输出：
-
-```text
-dist/car_control_stable_release.zip
-```
-
-## ARM Ubuntu 板端构建
-
-先安装依赖：
-
-```bash
-sudo apt update
-sudo apt install -y build-essential cmake pkg-config libusb-1.0-0-dev
-```
-
-设置 USB-CANFD 权限：
-
-```bash
-sudo tee /etc/udev/rules.d/99-usb-canfd.rules >/dev/null <<'EOF'
-SUBSYSTEM=="usb", ATTR{idVendor}=="34b7", ATTR{idProduct}=="6877", MODE="0666"
-EOF
-sudo udevadm control --reload-rules
-sudo udevadm trigger
-```
-
-编译硬件版：
-
-```bash
-chmod +x scripts/*.sh
-./scripts/build_board.sh
-```
-
-先跑 mock：
-
-```bash
-./scripts/run_mock.sh
-```
-
-再跑硬件低速调试模式：
-
-```bash
-CAR_MODE=mode2 GAMEPAD_DEVICE=/dev/input/js0 ./scripts/run_hardware.sh
-```
-
-硬件校准/验证：
-
-```bash
-CALIBRATE_ACTION=verify ./scripts/calibrate_hardware.sh
-```
-
-写转向零点必须人工确认轮子已经摆正，并显式加：
-
-```bash
-CALIBRATE_ACTION=steer-zero YES=1 SAVE_FLASH=1 ./scripts/calibrate_hardware.sh
-```
-
-## 重要安全说明
-
-这个稳定版的正式控制核心不会在正常启动时自动执行：
-
-```text
-set_zero_position
-save_motor_param
-```
-
-转向零点写入已经做成单独校准入口，必须显式 `--calibrate steer-zero --yes`，不能混在主控制程序里。
-
-## 现场第一轮推荐流程
-
-```text
-1. Windows 或板端先跑 mock。
-2. 板端编译 hardware 版本。
-3. 架空车轮。
-4. 用 mode2 跑硬件。
-5. 先看遥测 input / target / actual。
-6. 确认急停有效。
-7. 确认驱动方向。
-8. 确认转向方向。
-9. 再进入 mode1。
-10. mode0 最后测试。
-```
-
-## 当前限制
-
-- 校准工具目前支持 probe / verify / steer-zero，驱动方向人工交互校准还没迁移。
-- 硬件版需要在 ARM Ubuntu + USB-CANFD + 达妙电机环境实测。
-- Windows 只能可靠跑 mock。

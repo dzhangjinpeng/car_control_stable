@@ -1,77 +1,80 @@
 # 现场检查清单
 
-## 1. 软件启动
+## 1. 先跑 mock
 
-```bash
-./scripts/run_mock.sh
+```powershell
+.\scripts\run_mock.ps1
 ```
 
-通过标准：
+看这些项：
 
-- 程序完成指定循环。
-- 生成 `logs/mock_telemetry.jsonl`。
-- demo 后段急停，驱动目标为 0。
+- 程序正常结束
+- `logs/mock_telemetry.jsonl` 有内容
+- `mode2` 下输入、目标、实测都能写进遥测
 
-## 2. 硬件构建
+## 2. 再开 API
 
-```bash
-./scripts/build_board.sh
+```powershell
+.\scripts\run_api.ps1
 ```
 
-通过标准：
+浏览器访问：
 
-- 生成 `build/core_cpp/car_control_core`。
-- 没有 libusb / libu2canfd 链接错误。
+```text
+http://127.0.0.1:8765/
+```
 
-## 2.5 校准报告
-
-mock 验证：
+## 3. 校准检查
 
 ```powershell
 .\scripts\calibrate_mock.ps1
 ```
 
-硬件验证：
+通过标准：
 
-```bash
-CALIBRATE_ACTION=verify ./scripts/calibrate_hardware.sh
+- `logs/calibration.json` 生成成功
+- 能看到每个电机的 position / velocity / torque
+
+## 4. 驱动方向
+
+```powershell
+.\build\manual\car_control_core.exe --mock --calibrate drive-direction --report-file logs\drive_calibration.json
 ```
 
 通过标准：
 
-- 生成 `logs/calibration.json`。
-- 能看到每个电机的 position / velocity / torque。
-- 不出现硬件客户端打开失败。
+- 车轮架空
+- 一次只点动一个驱动电机
+- 观察轮子正反向后更新 `configs/hardware.json`
 
-## 3. 真机前检查
+## 5. 转向零点
 
-- 车轮架空。
-- 急停方式明确。
-- CANFD 已插好。
-- 电机已上电。
-- `configs/hardware.json` 的 SN 和电机 ID 正确。
-- 手柄设备路径正确。
-
-## 4. 真机 mode2
-
-```bash
-CAR_MODE=mode2 ./scripts/run_hardware.sh
+```powershell
+.\build\manual\car_control_core.exe --mock --calibrate steer-zero --yes --save-flash
 ```
 
-看遥测：
+通过标准：
 
-- `input_source = gamepad`
-- `mode = mode2_safe_debug`
-- 摇杆动时 target 变化。
-- actual 能跟随 target。
-- 急停时 drive target 归零。
+- 机械零位已经摆正
+- 校准报告生成成功
+- 真机时再考虑是否写入 flash
 
-## 5. 异常定位
+## 6. 远程输入
 
-```text
-输入不变：查手柄和 /dev/input/js0
-target 不变：查模式、死区、急停
-actual 不变：查 CANFD、电源、电机 ID、波特率
-方向反：查 inverted_drive_motor_ids 或轮位映射
-转向怪：查零点、轴距、轮距、转向电机角色
+板端：
+
+```powershell
+.\build\manual\car_control_core.exe --mock --input remote --mode mode2 --max-loops 0 --telemetry-file logs\remote_telemetry.jsonl
 ```
+
+电脑端：
+
+```powershell
+.\scripts\send_remote_demo.ps1
+```
+
+通过标准：
+
+- `input_link_state` 先是 `remote_online`
+- 停止发送后变成 `remote_timeout`
+- 输入回到中位

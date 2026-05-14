@@ -29,6 +29,10 @@ if (UNIX)
     )
 endif()
 
+if (WIN32)
+    target_link_libraries(car_control_core PRIVATE ws2_32)
+endif()
+
 if (CAR_CONTROL_WITH_DAMIAO)
     find_package(Threads REQUIRED)
     find_package(PkgConfig REQUIRED)
