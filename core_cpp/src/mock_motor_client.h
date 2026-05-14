@@ -16,8 +16,11 @@ public:
     void control_position_velocity(int motor_id, double position_rad, double velocity_rad_s) override;
     double get_position(int motor_id) const override;
     double get_velocity(int motor_id) const override;
+    double get_torque(int motor_id) const override;
     double get_target_position(int motor_id) const override;
     double get_target_velocity(int motor_id) const override;
+    void set_zero_position(int motor_id) override;
+    void save_motor_param(int motor_id) override;
     std::vector<std::string> drain_events() override;
 
 private:
@@ -25,8 +28,8 @@ private:
     bool enabled_ = false;
     std::map<int, double> positions_;
     std::map<int, double> velocities_;
+    std::map<int, double> torques_;
     std::map<int, double> target_positions_;
     std::map<int, double> target_velocities_;
     std::vector<std::string> events_;
 };
-

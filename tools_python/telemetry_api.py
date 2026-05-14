@@ -32,6 +32,12 @@ class TelemetryReader:
         return frames[-1] if frames else None
 
 
+def load_json_file(path: Path) -> dict | None:
+    if not path.exists():
+        return None
+    return json.loads(path.read_text(encoding="utf-8"))
+
+
 class ApiHandler(BaseHTTPRequestHandler):
     server_version = "CarControlStableAPI/1.0"
 
@@ -44,6 +50,8 @@ class ApiHandler(BaseHTTPRequestHandler):
         parsed = urlparse(self.path)
         reader: TelemetryReader = self.server.reader  # type: ignore[attr-defined]
         frontend_dir: Path = self.server.frontend_dir  # type: ignore[attr-defined]
+        config_dir: Path = self.server.config_dir  # type: ignore[attr-defined]
+        calibration_report: Path = self.server.calibration_report  # type: ignore[attr-defined]
 
         if parsed.path == "/api/v1/health":
             latest = reader.latest()
@@ -56,6 +64,14 @@ class ApiHandler(BaseHTTPRequestHandler):
                         "latest_loop_index": latest.get("loop_index") if latest else None,
                         "mode": latest.get("mode") if latest else None,
                         "input_source": latest.get("input_source") if latest else None,
+                        "config_files": {
+                            "control": (config_dir / "control.json").exists(),
+                            "hardware": (config_dir / "hardware.json").exists(),
+                            "input": (config_dir / "input.json").exists(),
+                            "network": (config_dir / "network.json").exists(),
+                            "safety": (config_dir / "safety.json").exists(),
+                        },
+                        "calibration_report_exists": calibration_report.exists(),
                     },
                 }
             )
@@ -71,6 +87,24 @@ class ApiHandler(BaseHTTPRequestHandler):
                 limit = 100
             self._json({"ok": True, "data": reader.history(limit)})
             return
+        if parsed.path.startswith("/api/v1/config/"):
+            name = parsed.path.rsplit("/", 1)[-1]
+            allowed = {
+                "control": "control.json",
+                "hardware": "hardware.json",
+                "input": "input.json",
+                "network": "network.json",
+                "safety": "safety.json",
+                "profiles": "control_profiles.json",
+            }
+            if name not in allowed:
+                self._json({"ok": False, "error": "unknown config"}, HTTPStatus.NOT_FOUND)
+                return
+            self._json({"ok": True, "data": load_json_file(config_dir / allowed[name])})
+            return
+        if parsed.path == "/api/v1/calibration/latest":
+            self._json({"ok": True, "data": load_json_file(calibration_report)})
+            return
         if parsed.path == "/api/v1/meta":
             self._json(
                 {
@@ -81,6 +115,13 @@ class ApiHandler(BaseHTTPRequestHandler):
                             "/api/v1/health",
                             "/api/v1/telemetry/latest",
                             "/api/v1/telemetry/history?limit=100",
+                            "/api/v1/config/control",
+                            "/api/v1/config/hardware",
+                            "/api/v1/config/input",
+                            "/api/v1/config/network",
+                            "/api/v1/config/safety",
+                            "/api/v1/config/profiles",
+                            "/api/v1/calibration/latest",
                             "/api/v1/meta",
                         ],
                     },
@@ -128,6 +169,8 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Read-only telemetry API for car_control_stable")
     parser.add_argument("--telemetry-file", default="logs/mock_telemetry.jsonl")
     parser.add_argument("--frontend-dir", default="frontend")
+    parser.add_argument("--config-dir", default="configs")
+    parser.add_argument("--calibration-report", default="logs/calibration.json")
     parser.add_argument("--host", default="127.0.0.1")
     parser.add_argument("--port", type=int, default=8765)
     return parser.parse_args()
@@ -138,6 +181,8 @@ def main() -> int:
     server = ThreadingHTTPServer((args.host, args.port), ApiHandler)
     server.reader = TelemetryReader(Path(args.telemetry_file))  # type: ignore[attr-defined]
     server.frontend_dir = Path(args.frontend_dir)  # type: ignore[attr-defined]
+    server.config_dir = Path(args.config_dir)  # type: ignore[attr-defined]
+    server.calibration_report = Path(args.calibration_report)  # type: ignore[attr-defined]
     print(f"telemetry api: http://{args.host}:{args.port}")
     print(f"telemetry file: {args.telemetry_file}")
     try:
@@ -151,4 +196,3 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
-

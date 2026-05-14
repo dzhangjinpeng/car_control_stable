@@ -1,5 +1,6 @@
 #pragma once
 
+#include "app_config.h"
 #include "types.h"
 
 #include <cstdint>
@@ -30,13 +31,13 @@ private:
 
 class GamepadInputSource final : public InputSource {
 public:
-    explicit GamepadInputSource(std::string device_path);
+    explicit GamepadInputSource(InputConfig config);
     ~GamepadInputSource() override;
 
     DriverInput poll(std::uint64_t loop_index) override;
     std::string name() const override;
 
 private:
-    std::string device_path_;
+    InputConfig config_;
     void* impl_ = nullptr;
 };

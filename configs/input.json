@@ -1,0 +1,13 @@
+{
+  "_comment": "手柄映射配置。C++ 稳定版 Linux gamepad 输入会读取这些轴和按钮。",
+  "device_path": "/dev/input/js0",
+  "left_x_axis": 0,
+  "left_y_axis": 1,
+  "right_x_axis": 3,
+  "right_y_axis": 4,
+  "mode_button": 1,
+  "steering_lock_button": 4,
+  "drive_direction_button": 5,
+  "emergency_stop_button": 6,
+  "deadzone": 0.15
+}

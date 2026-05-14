@@ -37,14 +37,28 @@ struct SafetyConfig {
     bool require_mock_for_now = true;
 };
 
+struct InputConfig {
+    std::string device_path = "/dev/input/js0";
+    int left_x_axis = 0;
+    int left_y_axis = 1;
+    int right_x_axis = 3;
+    int right_y_axis = 4;
+    int mode_button = 1;
+    int steering_lock_button = 4;
+    int drive_direction_button = 5;
+    int emergency_stop_button = 6;
+};
+
 struct AppConfig {
     ControlConfig control;
     HardwareConfig hardware;
     SafetyConfig safety;
+    InputConfig input;
 };
 
 ControlConfig load_control_config(const std::string& path);
 HardwareConfig load_hardware_config(const std::string& path);
 SafetyConfig load_safety_config(const std::string& path);
+InputConfig load_input_config(const std::string& path);
 
 bool contains_int(const std::vector<int>& values, int value);

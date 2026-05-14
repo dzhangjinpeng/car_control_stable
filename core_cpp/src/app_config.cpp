@@ -155,6 +155,24 @@ SafetyConfig load_safety_config(const std::string& path) {
     return config;
 }
 
+InputConfig load_input_config(const std::string& path) {
+    InputConfig config;
+    const std::string text = read_text_if_exists(path);
+    if (text.empty()) {
+        return config;
+    }
+    config.device_path = string_value(text, "device_path", config.device_path);
+    config.left_x_axis = static_cast<int>(number_value(text, "left_x_axis", config.left_x_axis));
+    config.left_y_axis = static_cast<int>(number_value(text, "left_y_axis", config.left_y_axis));
+    config.right_x_axis = static_cast<int>(number_value(text, "right_x_axis", config.right_x_axis));
+    config.right_y_axis = static_cast<int>(number_value(text, "right_y_axis", config.right_y_axis));
+    config.mode_button = static_cast<int>(number_value(text, "mode_button", config.mode_button));
+    config.steering_lock_button = static_cast<int>(number_value(text, "steering_lock_button", config.steering_lock_button));
+    config.drive_direction_button = static_cast<int>(number_value(text, "drive_direction_button", config.drive_direction_button));
+    config.emergency_stop_button = static_cast<int>(number_value(text, "emergency_stop_button", config.emergency_stop_button));
+    return config;
+}
+
 bool contains_int(const std::vector<int>& values, int value) {
     for (const int item : values) {
         if (item == value) {

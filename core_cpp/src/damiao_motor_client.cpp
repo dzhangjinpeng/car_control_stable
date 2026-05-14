@@ -143,12 +143,58 @@ double DamiaoMotorClient::get_velocity(int motor_id) const {
     return 0.0;
 }
 
+double DamiaoMotorClient::get_torque(int motor_id) const {
+#ifdef CAR_CONTROL_WITH_DAMIAO
+    if (control_) {
+        auto motor = control_->getMotor(static_cast<std::uint16_t>(motor_id));
+        if (motor) {
+            return motor->Get_tau();
+        }
+    }
+#else
+    (void)motor_id;
+#endif
+    return 0.0;
+}
+
 double DamiaoMotorClient::get_target_position(int motor_id) const {
     return value_or_zero(target_positions_, motor_id);
 }
 
 double DamiaoMotorClient::get_target_velocity(int motor_id) const {
     return value_or_zero(target_velocities_, motor_id);
+}
+
+void DamiaoMotorClient::set_zero_position(int motor_id) {
+#ifndef CAR_CONTROL_WITH_DAMIAO
+    (void)motor_id;
+    throw std::runtime_error("Damiao hardware support was not compiled");
+#else
+    if (!control_) {
+        throw std::runtime_error("DamiaoMotorClient is not open");
+    }
+    auto motor = control_->getMotor(static_cast<std::uint16_t>(motor_id));
+    if (!motor) {
+        throw std::runtime_error("steer motor not found");
+    }
+    control_->set_zero_position(*motor);
+#endif
+}
+
+void DamiaoMotorClient::save_motor_param(int motor_id) {
+#ifndef CAR_CONTROL_WITH_DAMIAO
+    (void)motor_id;
+    throw std::runtime_error("Damiao hardware support was not compiled");
+#else
+    if (!control_) {
+        throw std::runtime_error("DamiaoMotorClient is not open");
+    }
+    auto motor = control_->getMotor(static_cast<std::uint16_t>(motor_id));
+    if (!motor) {
+        throw std::runtime_error("steer motor not found");
+    }
+    control_->save_motor_param(*motor);
+#endif
 }
 
 std::vector<std::string> DamiaoMotorClient::drain_events() {

@@ -1,0 +1,18 @@
+{
+  "_comment": "控制挡位配置。当前 C++ 核心默认读取 configs/control.json，后续可把 profile 合并逻辑下沉到核心。",
+  "conservative": {
+    "max_linear_speed_mps": 0.35,
+    "mode2_speed_scale": 0.2,
+    "mode1_turn_speed_min_scale": 0.7
+  },
+  "normal": {
+    "max_linear_speed_mps": 0.5,
+    "mode2_speed_scale": 0.25,
+    "mode1_turn_speed_min_scale": 0.6
+  },
+  "sport": {
+    "max_linear_speed_mps": 0.7,
+    "mode2_speed_scale": 0.35,
+    "mode1_turn_speed_min_scale": 0.45
+  }
+}

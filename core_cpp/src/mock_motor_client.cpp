@@ -59,6 +59,10 @@ double MockMotorClient::get_velocity(int motor_id) const {
     return map_value_or_zero(velocities_, motor_id);
 }
 
+double MockMotorClient::get_torque(int motor_id) const {
+    return map_value_or_zero(torques_, motor_id);
+}
+
 double MockMotorClient::get_target_position(int motor_id) const {
     return map_value_or_zero(target_positions_, motor_id);
 }
@@ -67,9 +71,18 @@ double MockMotorClient::get_target_velocity(int motor_id) const {
     return map_value_or_zero(target_velocities_, motor_id);
 }
 
+void MockMotorClient::set_zero_position(int motor_id) {
+    positions_[motor_id] = 0.0;
+    target_positions_[motor_id] = 0.0;
+    events_.push_back(command_event("set_zero", motor_id, 0.0));
+}
+
+void MockMotorClient::save_motor_param(int motor_id) {
+    events_.push_back(command_event("save_param", motor_id, 0.0));
+}
+
 std::vector<std::string> MockMotorClient::drain_events() {
     auto events = events_;
     events_.clear();
     return events;
 }
-

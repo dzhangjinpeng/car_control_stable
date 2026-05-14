@@ -1,8 +1,22 @@
 {
+  "_comment": "稳定版硬件配置。正式运行前必须确认 serial_number、电机 ID、轮位映射和取反列表。",
   "serial_number": "14AA044B241402B10DDBDAFE448040BB",
   "nom_baud": 1000000,
   "dat_baud": 5000000,
+  "motor_ids": [1, 2, 3, 4, 5, 6, 7, 8],
   "drive_motor_ids": [1, 2, 3, 4],
   "steer_motor_ids": [5, 6, 7, 8],
-  "inverted_drive_motor_ids": [2, 3]
+  "inverted_drive_motor_ids": [2, 3],
+  "drive_motor_roles": {
+    "front_left": 3,
+    "front_right": 4,
+    "rear_left": 2,
+    "rear_right": 1
+  },
+  "steer_motor_roles": {
+    "front_left": 6,
+    "front_right": 7,
+    "rear_left": 5,
+    "rear_right": 8
+  }
 }

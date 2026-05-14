@@ -40,16 +40,15 @@ std::string DemoInputSource::name() const {
     return "demo";
 }
 
-GamepadInputSource::GamepadInputSource(std::string device_path) : device_path_(std::move(device_path)) {
+GamepadInputSource::GamepadInputSource(InputConfig config) : config_(std::move(config)) {
 #ifdef __linux__
-    auto* gamepad = new Gamepad(device_path_);
+    auto* gamepad = new Gamepad(config_.device_path);
     if (!gamepad->open()) {
         delete gamepad;
-        throw std::runtime_error("failed to open gamepad: " + device_path_);
+        throw std::runtime_error("failed to open gamepad: " + config_.device_path);
     }
     impl_ = gamepad;
 #else
-    (void)device_path_;
     throw std::runtime_error("gamepad input is only supported on Linux board builds");
 #endif
 }
@@ -65,14 +64,14 @@ DriverInput GamepadInputSource::poll(std::uint64_t) {
 #ifdef __linux__
     auto* gamepad = static_cast<Gamepad*>(impl_);
     gamepad->update();
-    input.left_x = gamepad->getAxis(0);
-    input.left_y = gamepad->getAxis(1);
-    input.right_x = gamepad->getAxis(2);
-    input.right_y = gamepad->getAxis(3);
-    input.mode_button = gamepad->getButton(1) != 0;
-    input.steering_lock_button = gamepad->getButton(2) != 0;
-    input.drive_direction_button = gamepad->getButton(3) != 0;
-    input.emergency_stop_button = gamepad->getButton(0) != 0;
+    input.left_x = gamepad->getAxis(config_.left_x_axis);
+    input.left_y = gamepad->getAxis(config_.left_y_axis);
+    input.right_x = gamepad->getAxis(config_.right_x_axis);
+    input.right_y = gamepad->getAxis(config_.right_y_axis);
+    input.mode_button = gamepad->getButton(config_.mode_button) != 0;
+    input.steering_lock_button = gamepad->getButton(config_.steering_lock_button) != 0;
+    input.drive_direction_button = gamepad->getButton(config_.drive_direction_button) != 0;
+    input.emergency_stop_button = gamepad->getButton(config_.emergency_stop_button) != 0;
 #endif
     return input;
 }

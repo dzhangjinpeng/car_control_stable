@@ -12,6 +12,7 @@
 #include <cstdint>
 #include <exception>
 #include <iostream>
+#include <fstream>
 #include <memory>
 #include <csignal>
 #include <string>
@@ -35,11 +36,16 @@ struct CliOptions {
     bool quiet = false;
     std::uint64_t max_loops = 1000;
     std::string input = "neutral";
+    std::string calibrate = "";
+    std::string report_file = "logs/calibration.json";
     ControlMode initial_mode = ControlMode::Mode2SafeDebug;
-    std::string gamepad_device = "/dev/input/js0";
+    std::string gamepad_device = "";
+    bool yes = false;
+    bool save_flash = false;
     std::string control_config = "configs/control.json";
     std::string hardware_config = "configs/hardware.json";
     std::string safety_config = "configs/safety.json";
+    std::string input_config = "configs/input.json";
     std::string telemetry_file = "telemetry.jsonl";
 };
 
@@ -50,12 +56,18 @@ void print_usage() {
         << "Options:\n"
         << "  --mock                         Use MockMotorClient. Required in phase 1.\n"
         << "  --input neutral|demo|gamepad   Input source. Default: neutral.\n"
+        << "  --calibrate verify|probe|steer-zero\n"
+        << "                                 Run calibration/check workflow instead of control loop.\n"
+        << "  --report-file PATH             Calibration report path. Default: logs/calibration.json.\n"
+        << "  --yes                          Required for steer-zero writes.\n"
+        << "  --save-flash                   Save zero position to motor flash during steer-zero.\n"
         << "  --mode mode0|mode1|mode2       Initial control mode. Default: mode2.\n"
-        << "  --gamepad-device PATH          Linux joystick device. Default: /dev/input/js0.\n"
+        << "  --gamepad-device PATH          Override Linux joystick device from input config.\n"
         << "  --max-loops N                  Number of control loops. Default: 1000.\n"
         << "  --control-config PATH          Control config JSON path.\n"
         << "  --hardware-config PATH         Hardware config JSON path.\n"
         << "  --safety-config PATH           Safety config JSON path.\n"
+        << "  --input-config PATH            Input config JSON path.\n"
         << "  --telemetry-file PATH          JSONL telemetry output. Default: telemetry.jsonl.\n"
         << "  --quiet                        Only print final summary.\n";
 }
@@ -80,6 +92,14 @@ CliOptions parse_args(int argc, char** argv) {
             options.quiet = true;
         } else if (arg == "--input") {
             options.input = require_value(arg);
+        } else if (arg == "--calibrate") {
+            options.calibrate = require_value(arg);
+        } else if (arg == "--report-file") {
+            options.report_file = require_value(arg);
+        } else if (arg == "--yes") {
+            options.yes = true;
+        } else if (arg == "--save-flash") {
+            options.save_flash = true;
         } else if (arg == "--mode") {
             const std::string mode = require_value(arg);
             if (mode == "mode0") {
@@ -101,6 +121,8 @@ CliOptions parse_args(int argc, char** argv) {
             options.hardware_config = require_value(arg);
         } else if (arg == "--safety-config") {
             options.safety_config = require_value(arg);
+        } else if (arg == "--input-config") {
+            options.input_config = require_value(arg);
         } else if (arg == "--telemetry-file") {
             options.telemetry_file = require_value(arg);
         } else {
@@ -113,6 +135,7 @@ CliOptions parse_args(int argc, char** argv) {
 std::unique_ptr<InputSource> build_input_source(
     const std::string& name,
     std::uint64_t max_loops,
+    InputConfig input_config,
     const std::string& gamepad_device) {
     if (name == "neutral") {
         return std::unique_ptr<InputSource>(new NeutralInputSource());
@@ -121,7 +144,10 @@ std::unique_ptr<InputSource> build_input_source(
         return std::unique_ptr<InputSource>(new DemoInputSource(max_loops));
     }
     if (name == "gamepad") {
-        return std::unique_ptr<InputSource>(new GamepadInputSource(gamepad_device));
+        if (!gamepad_device.empty()) {
+            input_config.device_path = gamepad_device;
+        }
+        return std::unique_ptr<InputSource>(new GamepadInputSource(input_config));
     }
     throw std::runtime_error("unsupported input source: " + name);
 }
@@ -130,6 +156,106 @@ double seconds_since_epoch() {
     using clock = std::chrono::system_clock;
     const auto now = clock::now().time_since_epoch();
     return std::chrono::duration<double>(now).count();
+}
+
+std::string json_escape(const std::string& value) {
+    std::string out;
+    for (const char ch : value) {
+        if (ch == '"' || ch == '\\') {
+            out.push_back('\\');
+        }
+        out.push_back(ch);
+    }
+    return out;
+}
+
+void write_calibration_report(
+    const std::string& path,
+    const std::string& action,
+    const HardwareConfig& hardware,
+    const MotorClient& motors,
+    bool wrote_zero,
+    bool saved_flash) {
+    std::ofstream file(path);
+    if (!file) {
+        throw std::runtime_error("failed to open calibration report: " + path);
+    }
+    file << "{\n";
+    file << "  \"action\": \"" << json_escape(action) << "\",\n";
+    file << "  \"timestamp_s\": " << seconds_since_epoch() << ",\n";
+    file << "  \"wrote_zero\": " << (wrote_zero ? "true" : "false") << ",\n";
+    file << "  \"saved_flash\": " << (saved_flash ? "true" : "false") << ",\n";
+    file << "  \"motors\": [\n";
+    bool first = true;
+    auto write_motor = [&](int motor_id, const std::string& role) {
+        if (!first) {
+            file << ",\n";
+        }
+        first = false;
+        file << "    {"
+             << "\"motor_id\": " << motor_id << ", "
+             << "\"role\": \"" << json_escape(role) << "\", "
+             << "\"position\": " << motors.get_position(motor_id) << ", "
+             << "\"velocity\": " << motors.get_velocity(motor_id) << ", "
+             << "\"torque\": " << motors.get_torque(motor_id)
+             << "}";
+    };
+    for (std::size_t i = 0; i < hardware.drive_motor_ids.size(); ++i) {
+        write_motor(hardware.drive_motor_ids[i], "drive");
+    }
+    for (std::size_t i = 0; i < hardware.steer_motor_ids.size(); ++i) {
+        write_motor(hardware.steer_motor_ids[i], "steer");
+    }
+    file << "\n  ]\n";
+    file << "}\n";
+}
+
+int run_calibration(const CliOptions& options, const AppConfig& config, MotorClient* motors) {
+    motors->open();
+    motors->enable_all();
+    bool wrote_zero = false;
+    bool saved_flash = false;
+    try {
+        if (options.calibrate == "probe" || options.calibrate == "verify") {
+            std::cout << "calibration " << options.calibrate << "\n";
+            for (const int motor_id : config.hardware.drive_motor_ids) {
+                std::cout << "drive id=" << motor_id
+                          << " pos=" << motors->get_position(motor_id)
+                          << " vel=" << motors->get_velocity(motor_id)
+                          << " tau=" << motors->get_torque(motor_id) << "\n";
+            }
+            for (const int motor_id : config.hardware.steer_motor_ids) {
+                std::cout << "steer id=" << motor_id
+                          << " pos=" << motors->get_position(motor_id)
+                          << " vel=" << motors->get_velocity(motor_id)
+                          << " tau=" << motors->get_torque(motor_id) << "\n";
+            }
+        } else if (options.calibrate == "steer-zero") {
+            if (!options.yes) {
+                throw std::runtime_error("--calibrate steer-zero requires --yes; make sure steering wheels are physically centered");
+            }
+            for (const int motor_id : config.hardware.steer_motor_ids) {
+                motors->set_zero_position(motor_id);
+                wrote_zero = true;
+                if (options.save_flash) {
+                    motors->save_motor_param(motor_id);
+                    saved_flash = true;
+                }
+            }
+            std::cout << "steering zero written for " << config.hardware.steer_motor_ids.size() << " motors\n";
+        } else {
+            throw std::runtime_error("unsupported calibration action: " + options.calibrate);
+        }
+        write_calibration_report(options.report_file, options.calibrate, config.hardware, *motors, wrote_zero, saved_flash);
+        std::cout << "calibration report: " << options.report_file << "\n";
+        motors->disable_all();
+        motors->close();
+        return 0;
+    } catch (...) {
+        motors->disable_all();
+        motors->close();
+        throw;
+    }
 }
 
 void sleep_until_steady(std::chrono::steady_clock::time_point target) {
@@ -162,17 +288,21 @@ int main(int argc, char** argv) {
         config.control = load_control_config(options.control_config);
         config.hardware = load_hardware_config(options.hardware_config);
         config.safety = load_safety_config(options.safety_config);
+        config.input = load_input_config(options.input_config);
 
         if (config.safety.require_mock_for_now && !options.mock) {
             throw std::runtime_error("phase 1 only supports --mock; refusing to start hardware mode");
         }
 
-        auto input_source = build_input_source(options.input, options.max_loops, options.gamepad_device);
+        auto input_source = build_input_source(options.input, options.max_loops, config.input, options.gamepad_device);
         std::unique_ptr<MotorClient> motors;
         if (options.mock) {
             motors.reset(new MockMotorClient());
         } else {
             motors.reset(new DamiaoMotorClient(config.hardware));
+        }
+        if (!options.calibrate.empty()) {
+            return run_calibration(options, config, motors.get());
         }
         CarController controller(config.control, config.hardware, options.initial_mode);
         SafetyManager safety(config.safety);

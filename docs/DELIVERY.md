@@ -56,6 +56,12 @@ cd F:\公司\小车\car_control_stable
 http://127.0.0.1:8765/
 ```
 
+生成 mock 校准报告：
+
+```powershell
+.\scripts\calibrate_mock.ps1
+```
+
 ## 打包
 
 ```powershell
@@ -106,6 +112,18 @@ chmod +x scripts/*.sh
 CAR_MODE=mode2 GAMEPAD_DEVICE=/dev/input/js0 ./scripts/run_hardware.sh
 ```
 
+硬件校准/验证：
+
+```bash
+CALIBRATE_ACTION=verify ./scripts/calibrate_hardware.sh
+```
+
+写转向零点必须人工确认轮子已经摆正，并显式加：
+
+```bash
+CALIBRATE_ACTION=steer-zero YES=1 SAVE_FLASH=1 ./scripts/calibrate_hardware.sh
+```
+
 ## 重要安全说明
 
 这个稳定版的正式控制核心不会在正常启动时自动执行：
@@ -115,7 +133,7 @@ set_zero_position
 save_motor_param
 ```
 
-转向零点写入必须以后做成单独校准工具，不能混在主控制程序里。
+转向零点写入已经做成单独校准入口，必须显式 `--calibrate steer-zero --yes`，不能混在主控制程序里。
 
 ## 现场第一轮推荐流程
 
@@ -134,6 +152,6 @@ save_motor_param
 
 ## 当前限制
 
-- 校准工具还没有迁移进稳定版。
+- 校准工具目前支持 probe / verify / steer-zero，驱动方向人工交互校准还没迁移。
 - 硬件版需要在 ARM Ubuntu + USB-CANFD + 达妙电机环境实测。
 - Windows 只能可靠跑 mock。

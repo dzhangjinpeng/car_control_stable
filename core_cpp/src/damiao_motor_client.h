@@ -24,8 +24,11 @@ public:
     void control_position_velocity(int motor_id, double position_rad, double velocity_rad_s) override;
     double get_position(int motor_id) const override;
     double get_velocity(int motor_id) const override;
+    double get_torque(int motor_id) const override;
     double get_target_position(int motor_id) const override;
     double get_target_velocity(int motor_id) const override;
+    void set_zero_position(int motor_id) override;
+    void save_motor_param(int motor_id) override;
     std::vector<std::string> drain_events() override;
 
 private:
@@ -38,4 +41,3 @@ private:
     std::shared_ptr<damiao::Motor_Control> control_;
 #endif
 };
-

@@ -1,0 +1,7 @@
+{
+  "_comment": "预留远程输入配置。当前稳定版还没有迁移 UDP/hybrid，先保留与 Python 版一致的配置面。",
+  "bind_host": "0.0.0.0",
+  "port": 23333,
+  "timeout_s": 0.2,
+  "poll_timeout_s": 0.0
+}

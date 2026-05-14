@@ -1,5 +1,8 @@
 {
+  "_comment": "稳定版安全配置。硬件运行依赖显式硬件构建，正常启动不写零点、不保存 flash。",
   "require_mock_for_now": false,
   "max_drive_motor_speed_rad_s": 3.0,
-  "max_steer_motor_position_rad": 1.2
+  "max_steer_motor_position_rad": 1.9,
+  "allow_zero_write_only_with_yes": true,
+  "remote_timeout_s": 0.2
 }

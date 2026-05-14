@@ -23,6 +23,26 @@
 - 生成 `build/core_cpp/car_control_core`。
 - 没有 libusb / libu2canfd 链接错误。
 
+## 2.5 校准报告
+
+mock 验证：
+
+```powershell
+.\scripts\calibrate_mock.ps1
+```
+
+硬件验证：
+
+```bash
+CALIBRATE_ACTION=verify ./scripts/calibrate_hardware.sh
+```
+
+通过标准：
+
+- 生成 `logs/calibration.json`。
+- 能看到每个电机的 position / velocity / torque。
+- 不出现硬件客户端打开失败。
+
 ## 3. 真机前检查
 
 - 车轮架空。
@@ -55,4 +75,3 @@ actual 不变：查 CANFD、电源、电机 ID、波特率
 方向反：查 inverted_drive_motor_ids 或轮位映射
 转向怪：查零点、轴距、轮距、转向电机角色
 ```
-
