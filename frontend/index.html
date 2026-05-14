@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>小车稳定版诊断</title>
+  <style>
+    :root {
+      color-scheme: light;
+      font-family: "Microsoft YaHei", "Segoe UI", sans-serif;
+      background: #f5f7f8;
+      color: #182026;
+    }
+    body { margin: 0; }
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 18px 24px;
+      background: #ffffff;
+      border-bottom: 1px solid #d9e0e4;
+    }
+    h1 { margin: 0; font-size: 20px; }
+    main { padding: 20px 24px; display: grid; gap: 16px; }
+    .grid { display: grid; grid-template-columns: repeat(4, minmax(150px, 1fr)); gap: 12px; }
+    .panel {
+      background: #ffffff;
+      border: 1px solid #d9e0e4;
+      border-radius: 8px;
+      padding: 14px;
+    }
+    .metric span { display: block; color: #667782; font-size: 13px; }
+    .metric strong { display: block; margin-top: 6px; font-size: 18px; }
+    table { width: 100%; border-collapse: collapse; font-size: 14px; }
+    th, td { padding: 8px; border-bottom: 1px solid #e5eaed; text-align: left; }
+    th { color: #50616b; font-weight: 600; }
+    .ok { color: #177245; }
+    .danger { color: #b42318; font-weight: 700; }
+    .muted { color: #667782; }
+    @media (max-width: 900px) { .grid { grid-template-columns: repeat(2, minmax(140px, 1fr)); } }
+    @media (max-width: 520px) { header { display: block; } .grid { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>小车稳定版诊断</h1>
+    <div class="muted" id="updated">等待数据</div>
+  </header>
+  <main>
+    <section class="grid">
+      <div class="panel metric"><span>模式</span><strong id="mode">-</strong></div>
+      <div class="panel metric"><span>输入源</span><strong id="inputSource">-</strong></div>
+      <div class="panel metric"><span>循环</span><strong id="loopIndex">-</strong></div>
+      <div class="panel metric"><span>急停</span><strong id="estop">-</strong></div>
+    </section>
+    <section class="panel">
+      <h2>驾驶输入</h2>
+      <div class="grid">
+        <div class="metric"><span>left_x</span><strong id="leftX">-</strong></div>
+        <div class="metric"><span>left_y</span><strong id="leftY">-</strong></div>
+        <div class="metric"><span>right_x</span><strong id="rightX">-</strong></div>
+        <div class="metric"><span>right_y</span><strong id="rightY">-</strong></div>
+      </div>
+    </section>
+    <section class="panel">
+      <h2>驱动电机</h2>
+      <table>
+        <thead><tr><th>角色</th><th>ID</th><th>目标</th><th>实测</th><th>误差</th></tr></thead>
+        <tbody id="driveRows"></tbody>
+      </table>
+    </section>
+    <section class="panel">
+      <h2>转向电机</h2>
+      <table>
+        <thead><tr><th>角色</th><th>ID</th><th>目标</th><th>实测</th><th>误差</th></tr></thead>
+        <tbody id="steerRows"></tbody>
+      </table>
+    </section>
+  </main>
+  <script>
+    const fmt = (value) => typeof value === 'number' ? value.toFixed(3) : '-';
+    function rows(items) {
+      return (items || []).map((m) => `
+        <tr>
+          <td>${m.role}</td>
+          <td>${m.motor_id}</td>
+          <td>${fmt(m.target)} ${m.unit || ''}</td>
+          <td>${fmt(m.actual)} ${m.unit || ''}</td>
+          <td>${fmt(m.error)}</td>
+        </tr>
+      `).join('');
+    }
+    async function refresh() {
+      try {
+        const res = await fetch('/api/v1/telemetry/latest');
+        const payload = await res.json();
+        const data = payload.data;
+        if (!data) return;
+        document.getElementById('mode').textContent = data.mode || '-';
+        document.getElementById('inputSource').textContent = data.input_source || '-';
+        document.getElementById('loopIndex').textContent = data.loop_index ?? '-';
+        const estop = Boolean(data.safety && data.safety.emergency_stop);
+        const estopEl = document.getElementById('estop');
+        estopEl.textContent = estop ? '已触发' : '未触发';
+        estopEl.className = estop ? 'danger' : 'ok';
+        const input = data.driver_input || {};
+        document.getElementById('leftX').textContent = fmt(input.left_x);
+        document.getElementById('leftY').textContent = fmt(input.left_y);
+        document.getElementById('rightX').textContent = fmt(input.right_x);
+        document.getElementById('rightY').textContent = fmt(input.right_y);
+        document.getElementById('driveRows').innerHTML = rows(data.drive_motors);
+        document.getElementById('steerRows').innerHTML = rows(data.steer_motors);
+        document.getElementById('updated').textContent = new Date().toLocaleTimeString();
+      } catch (err) {
+        document.getElementById('updated').textContent = '读取失败';
+      }
+    }
+    refresh();
+    setInterval(refresh, 500);
+  </script>
+</body>
+</html>
+

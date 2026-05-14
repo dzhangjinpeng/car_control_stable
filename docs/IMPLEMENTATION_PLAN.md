@@ -31,7 +31,7 @@ car_control_core --mock --max-loops 1000
 - 最大循环耗时。
 - JSONL 遥测。
 
-状态：已完成第一版 mock 核心，后续可以继续补测试和更完整的模式拆分。
+状态：已完成第一版稳定核心，包含 mock、电机抽象、mode0/mode1/mode2、Linux gamepad 输入入口、可选达妙硬件客户端和 JSONL 遥测。
 
 当前 Windows 中文路径下，MinGW Makefiles 可能无法正确处理源文件路径；已提供 `core_cpp/build.ps1` 作为直接 `g++` 编译入口。板端或英文路径下仍优先使用 CMake。
 
@@ -49,6 +49,8 @@ car_control_core --mock --max-loops 1000
 - 超出限幅的命令会被截断。
 - 模式切换时驱动先停。
 
+状态：基础安全和 mode2 已完成；后续还需要补自动化单元测试。
+
 ## 阶段 3：接入达妙硬件
 
 目标：
@@ -65,6 +67,8 @@ car_control_core --mock --max-loops 1000
 - 能发转向位置命令。
 - 正常运行不写零点。
 
+状态：源码接入和构建脚本已完成；仍需要在 ARM Ubuntu 真机环境实测。
+
 ## 阶段 4：迁移 mode0 和 mode1
 
 目标：
@@ -78,6 +82,8 @@ car_control_core --mock --max-loops 1000
 - mode0 未到位时驱动轮为 0。
 - mode1 输入前进时四轮速度合理。
 - mode1 转向时内外轮角度和速度合理。
+
+状态：第一版 mode0/mode1 已完成；后续优化点是用真实反馈细调映射、速度补偿和零点处理。
 
 ## 阶段 5：诊断和工具
 

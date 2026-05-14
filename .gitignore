@@ -3,6 +3,7 @@ build/
 *.dll
 *.so
 *.a
+!core_cpp/vendor/damiao_core/lib/libu2canfd.a
 *.o
 *.obj
 *.pyc

@@ -1,6 +1,7 @@
 #include "app_config.h"
 
 #include <fstream>
+#include <cstdint>
 #include <regex>
 #include <sstream>
 #include <stdexcept>
@@ -22,6 +23,15 @@ double number_value(const std::string& text, const std::string& key, double fall
     std::smatch match;
     if (std::regex_search(text, match, pattern)) {
         return std::stod(match[1].str());
+    }
+    return fallback;
+}
+
+std::string string_value(const std::string& text, const std::string& key, const std::string& fallback) {
+    const std::regex pattern("\"" + key + "\"\\s*:\\s*\"([^\"]*)\"");
+    std::smatch match;
+    if (std::regex_search(text, match, pattern)) {
+        return match[1].str();
     }
     return fallback;
 }
@@ -64,7 +74,30 @@ ControlConfig load_control_config(const std::string& path) {
     config.deadzone = number_value(text, "deadzone", config.deadzone);
     config.max_linear_speed_mps = number_value(text, "max_linear_speed_mps", config.max_linear_speed_mps);
     config.max_steering_degrees = number_value(text, "max_steering_degrees", config.max_steering_degrees);
+    config.mode2_speed_scale = number_value(text, "mode2_speed_scale", config.mode2_speed_scale);
+    config.mode2_max_steering_degrees = number_value(
+        text,
+        "mode2_max_steering_degrees",
+        config.mode2_max_steering_degrees);
+    config.mode0_rotation_wheel_speed_rad_s = number_value(
+        text,
+        "mode0_rotation_wheel_speed_rad_s",
+        config.mode0_rotation_wheel_speed_rad_s);
+    config.mode0_fixed_steer_degrees = number_value(
+        text,
+        "mode0_fixed_steer_degrees",
+        config.mode0_fixed_steer_degrees);
+    config.mode0_position_tolerance_rad = number_value(
+        text,
+        "mode0_position_tolerance_rad",
+        config.mode0_position_tolerance_rad);
+    config.mode1_turn_speed_min_scale = number_value(
+        text,
+        "mode1_turn_speed_min_scale",
+        config.mode1_turn_speed_min_scale);
     config.wheel_radius_m = number_value(text, "wheel_radius_m", config.wheel_radius_m);
+    config.wheelbase_m = number_value(text, "wheelbase_m", config.wheelbase_m);
+    config.track_width_m = number_value(text, "track_width_m", config.track_width_m);
     config.gear_ratio = number_value(text, "gear_ratio", config.gear_ratio);
     config.steering_motor_speed_limit_rad_s = number_value(
         text,
@@ -76,6 +109,9 @@ ControlConfig load_control_config(const std::string& path) {
     }
     if (config.wheel_radius_m <= 0.0) {
         throw std::runtime_error("control.wheel_radius_m must be positive");
+    }
+    if (config.wheelbase_m <= 0.0 || config.track_width_m <= 0.0) {
+        throw std::runtime_error("control wheelbase_m and track_width_m must be positive");
     }
     if (config.gear_ratio <= 0.0) {
         throw std::runtime_error("control.gear_ratio must be positive");
@@ -89,6 +125,9 @@ HardwareConfig load_hardware_config(const std::string& path) {
     if (text.empty()) {
         return config;
     }
+    config.serial_number = string_value(text, "serial_number", config.serial_number);
+    config.nom_baud = static_cast<std::uint32_t>(number_value(text, "nom_baud", config.nom_baud));
+    config.dat_baud = static_cast<std::uint32_t>(number_value(text, "dat_baud", config.dat_baud));
     config.drive_motor_ids = int_array_value(text, "drive_motor_ids", config.drive_motor_ids);
     config.steer_motor_ids = int_array_value(text, "steer_motor_ids", config.steer_motor_ids);
     config.inverted_drive_motor_ids = int_array_value(
@@ -124,4 +163,3 @@ bool contains_int(const std::vector<int>& values, int value) {
     }
     return false;
 }
-

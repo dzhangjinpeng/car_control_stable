@@ -3,8 +3,15 @@
   "deadzone": 0.05,
   "max_linear_speed_mps": 0.15,
   "max_steering_degrees": 12.0,
+  "mode2_speed_scale": 0.25,
+  "mode2_max_steering_degrees": 8.0,
+  "mode0_rotation_wheel_speed_rad_s": 1.0,
+  "mode0_fixed_steer_degrees": 62.9,
+  "mode0_position_tolerance_rad": 0.01745,
+  "mode1_turn_speed_min_scale": 0.6,
   "wheel_radius_m": 0.0855,
+  "wheelbase_m": 0.62,
+  "track_width_m": 0.486,
   "gear_ratio": 3.0,
   "steering_motor_speed_limit_rad_s": 1.5
 }
-

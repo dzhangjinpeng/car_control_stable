@@ -16,12 +16,14 @@
 
 ## 当前阶段
 
-当前完成了第一版 C++ mock 控制核心。它只用于验证主循环、配置、安全限幅和遥测，不连接真实硬件。
+当前完成了可交付的第一版稳定核心。Windows 上可以直接跑 mock；ARM Ubuntu 板端可以编译带达妙 USB-CANFD 的硬件版本。
 
 优先阅读：
 
 - `docs/ARCHITECTURE.md`
 - `docs/IMPLEMENTATION_PLAN.md`
+- `docs/DELIVERY.md`
+- `docs/FIELD_CHECKLIST.md`
 
 ## 第一版运行方式
 
@@ -56,22 +58,43 @@ Windows PowerShell 下可执行文件一般是：
 .\build\manual\car_control_core.exe --mock --input demo --max-loops 1000 --telemetry-file telemetry.jsonl
 ```
 
-当前阶段如果不加 `--mock` 会拒绝启动，这是为了避免还没接入硬件安全检查时误碰真机。
+Windows 直接编译出来的版本只适合 mock。板端硬件版本需要用 `scripts/build_board.sh` 显式开启达妙硬件支持。
 
 ## 当前控制核心能做什么
 
 - 读取 `configs/control.json`、`configs/hardware.json`、`configs/safety.json`。
 - 以 `loop_period_s = 0.002` 运行固定周期循环。
 - 使用 `MockMotorClient` 模拟电机。
-- 支持 `neutral` 和 `demo` 输入。
+- 支持 `neutral`、`demo` 和 Linux `gamepad` 输入。
+- 支持 `mode0` 原地旋转、`mode1` 阿克曼转向、`mode2` 低速安全调试。
+- 支持 mock 电机和可选达妙硬件电机客户端。
 - 生成驱动轮速度目标和转向电机位置目标。
 - 执行急停输入归零。
 - 执行速度和转向目标限幅。
 - 输出 JSONL 遥测。
+- 提供只读 Python 遥测 API 和静态诊断前端。
 
 ## 当前还不能做什么
 
-- 还没有接真实达妙电机。
-- 还没有读取真实手柄。
-- 还没有实现完整 mode0 / mode1 / mode2。
-- 还没有前端 API。
+- 还没有迁移校准工具。
+- 硬件路径需要在 ARM Ubuntu + USB-CANFD + 达妙电机环境实测。
+
+## 诊断页面
+
+先运行核心生成遥测：
+
+```powershell
+.\scripts\run_mock.ps1
+```
+
+再开一个终端启动 API：
+
+```powershell
+.\scripts\run_api.ps1
+```
+
+浏览器打开：
+
+```text
+http://127.0.0.1:8765/
+```

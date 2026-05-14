@@ -4,6 +4,24 @@
 #include <string>
 #include <vector>
 
+enum class ControlMode {
+    Mode0Rotation = 0,
+    Mode1Ackermann = 1,
+    Mode2SafeDebug = 2,
+};
+
+inline std::string mode_name(ControlMode mode) {
+    switch (mode) {
+        case ControlMode::Mode0Rotation:
+            return "mode0_rotation";
+        case ControlMode::Mode1Ackermann:
+            return "mode1_ackermann";
+        case ControlMode::Mode2SafeDebug:
+            return "mode2_safe_debug";
+    }
+    return "unknown";
+}
+
 struct DriverInput {
     double left_x = 0.0;
     double left_y = 0.0;
@@ -45,4 +63,3 @@ struct LoopTelemetry {
     MotorCommand command;
     SafetyState safety;
 };
-

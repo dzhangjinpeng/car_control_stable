@@ -28,3 +28,15 @@ private:
     std::uint64_t max_loops_;
 };
 
+class GamepadInputSource final : public InputSource {
+public:
+    explicit GamepadInputSource(std::string device_path);
+    ~GamepadInputSource() override;
+
+    DriverInput poll(std::uint64_t loop_index) override;
+    std::string name() const override;
+
+private:
+    std::string device_path_;
+    void* impl_ = nullptr;
+};
