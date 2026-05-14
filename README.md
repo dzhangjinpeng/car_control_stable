@@ -21,6 +21,7 @@
 ## 文档入口
 
 - 使用教程：`docs/USAGE_TUTORIAL.md`
+- 参数调节说明：`docs/USAGE_TUTORIAL.md` 的“常用参数怎么调”
 - 控制方式说明：`docs/CONTROL_GUIDE.md`
 - 现场检查清单：`docs/FIELD_CHECKLIST.md`
 - 架构说明：`docs/ARCHITECTURE.md`
