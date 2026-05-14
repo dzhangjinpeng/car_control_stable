@@ -1,20 +1,30 @@
 #pragma once
 
+#include <map>
 #include <cstdint>
 #include <string>
 #include <vector>
 
 struct ControlConfig {
     double loop_period_s = 0.002;
+    double telemetry_interval_s = 0.1;
     double deadzone = 0.05;
     double max_linear_speed_mps = 0.15;
     double max_steering_degrees = 12.0;
+    double throttle_smoothing_alpha = 0.18;
+    double steering_smoothing_alpha = 0.22;
+    double throttle_curve_power = 1.2;
+    double steering_curve_power = 1.4;
+    double drive_speed_ramp_mps_per_s = 3.0;
     double mode2_speed_scale = 0.25;
     double mode2_max_steering_degrees = 8.0;
+    double mode2_turn_speed_min_scale = 0.75;
+    double mode2_turn_speed_curve_power = 1.0;
     double mode0_rotation_wheel_speed_rad_s = 1.0;
     double mode0_fixed_steer_degrees = 62.9;
     double mode0_position_tolerance_rad = 0.01745;
     double mode1_turn_speed_min_scale = 0.6;
+    double mode1_turn_speed_curve_power = 1.0;
     double wheel_radius_m = 0.0855;
     double wheelbase_m = 0.62;
     double track_width_m = 0.486;
@@ -26,9 +36,22 @@ struct HardwareConfig {
     std::string serial_number = "14AA044B241402B10DDBDAFE448040BB";
     std::uint32_t nom_baud = 1000000;
     std::uint32_t dat_baud = 5000000;
+    std::vector<int> motor_ids = {1, 2, 3, 4, 5, 6, 7, 8};
     std::vector<int> drive_motor_ids = {1, 2, 3, 4};
     std::vector<int> steer_motor_ids = {5, 6, 7, 8};
     std::vector<int> inverted_drive_motor_ids = {2, 3};
+    std::map<std::string, int> drive_motor_roles = {
+        {"front_left", 3},
+        {"front_right", 4},
+        {"rear_left", 2},
+        {"rear_right", 1},
+    };
+    std::map<std::string, int> steer_motor_roles = {
+        {"front_left", 6},
+        {"front_right", 7},
+        {"rear_left", 5},
+        {"rear_right", 8},
+    };
 };
 
 struct SafetyConfig {
@@ -65,6 +88,7 @@ struct AppConfig {
 };
 
 ControlConfig load_control_config(const std::string& path);
+ControlConfig load_control_config(const std::string& path, const std::string& profile_name, const std::string& profiles_path);
 HardwareConfig load_hardware_config(const std::string& path);
 SafetyConfig load_safety_config(const std::string& path);
 InputConfig load_input_config(const std::string& path);

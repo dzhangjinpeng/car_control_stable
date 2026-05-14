@@ -1,5 +1,5 @@
 {
-  "_comment": "控制挡位配置。当前 C++ 核心默认读取 configs/control.json，后续可把 profile 合并逻辑下沉到核心。",
+  "_comment": "控制档位配置。C++ 核心可用 --control-profile conservative|normal|sport 选择这些覆盖项。",
   "conservative": {
     "max_linear_speed_mps": 0.35,
     "mode2_speed_scale": 0.2,

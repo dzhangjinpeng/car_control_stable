@@ -11,6 +11,8 @@ add_executable(car_control_core
     src/app_config.cpp
     src/car_controller.cpp
     src/damiao_motor_client.cpp
+    src/drive_smoothing.cpp
+    src/input_filter.cpp
     src/input_source.cpp
     src/main.cpp
     src/mock_motor_client.cpp

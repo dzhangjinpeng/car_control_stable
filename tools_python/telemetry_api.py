@@ -38,6 +38,80 @@ def load_json_file(path: Path) -> dict | None:
     return json.loads(path.read_text(encoding="utf-8"))
 
 
+def validate_hardware_config(data: dict | None) -> list[str]:
+    if not data:
+        return ["hardware.json missing"]
+    issues: list[str] = []
+    motor_ids = set(data.get("motor_ids", []))
+    drive_ids = set(data.get("drive_motor_ids", []))
+    steer_ids = set(data.get("steer_motor_ids", []))
+    inverted = set(data.get("inverted_drive_motor_ids", []))
+    if len(motor_ids) != len(data.get("motor_ids", [])):
+        issues.append("motor_ids has duplicate values")
+    if not drive_ids.issubset(motor_ids):
+        issues.append("drive_motor_ids must be a subset of motor_ids")
+    if not steer_ids.issubset(motor_ids):
+        issues.append("steer_motor_ids must be a subset of motor_ids")
+    if drive_ids & steer_ids:
+        issues.append("drive_motor_ids and steer_motor_ids overlap")
+    if not inverted.issubset(drive_ids):
+        issues.append("inverted_drive_motor_ids must be a subset of drive_motor_ids")
+    for key in ("drive_motor_roles", "steer_motor_roles"):
+        roles = data.get(key, {})
+        if len(roles) != 4:
+            issues.append(f"{key} should contain 4 roles")
+        if not set(roles.values()).issubset(motor_ids):
+            issues.append(f"{key} contains unknown motor id")
+    return issues
+
+
+def validate_control_config(data: dict | None) -> list[str]:
+    if not data:
+        return ["control.json missing"]
+    issues: list[str] = []
+    positive_keys = [
+        "loop_period_s",
+        "telemetry_interval_s",
+        "max_linear_speed_mps",
+        "wheel_radius_m",
+        "wheelbase_m",
+        "track_width_m",
+        "gear_ratio",
+        "drive_speed_ramp_mps_per_s",
+        "steering_motor_speed_limit_rad_s",
+    ]
+    for key in positive_keys:
+        if float(data.get(key, 0)) <= 0:
+            issues.append(f"{key} must be positive")
+    deadzone = float(data.get("deadzone", -1))
+    if deadzone < 0 or deadzone > 1:
+        issues.append("deadzone must be in 0..1")
+    return issues
+
+
+def startup_checks(config_dir: Path, calibration_report: Path) -> dict:
+    hardware = load_json_file(config_dir / "hardware.json")
+    control = load_json_file(config_dir / "control.json")
+    hardware_issues = validate_hardware_config(hardware)
+    control_issues = validate_control_config(control)
+    config_files = {
+        "control": (config_dir / "control.json").exists(),
+        "hardware": (config_dir / "hardware.json").exists(),
+        "input": (config_dir / "input.json").exists(),
+        "network": (config_dir / "network.json").exists(),
+        "safety": (config_dir / "safety.json").exists(),
+        "profiles": (config_dir / "control_profiles.json").exists(),
+    }
+    return {
+        "config_files": config_files,
+        "hardware_issues": hardware_issues,
+        "control_issues": control_issues,
+        "config_issues": hardware_issues + control_issues,
+        "calibration_report_exists": calibration_report.exists(),
+        "ok": all(config_files.values()) and not hardware_issues and not control_issues,
+    }
+
+
 class ApiHandler(BaseHTTPRequestHandler):
     server_version = "CarControlStableAPI/1.0"
 
@@ -55,23 +129,23 @@ class ApiHandler(BaseHTTPRequestHandler):
 
         if parsed.path == "/api/v1/health":
             latest = reader.latest()
+            checks = startup_checks(config_dir, calibration_report)
             self._json(
                 {
                     "ok": True,
                     "data": {
                         "service": "car_control_stable",
+                        "schema_version": 2,
                         "telemetry_ready": latest is not None,
                         "latest_loop_index": latest.get("loop_index") if latest else None,
                         "mode": latest.get("mode") if latest else None,
+                        "mode_name": latest.get("mode") if latest else None,
                         "input_source": latest.get("input_source") if latest else None,
-                        "config_files": {
-                            "control": (config_dir / "control.json").exists(),
-                            "hardware": (config_dir / "hardware.json").exists(),
-                            "input": (config_dir / "input.json").exists(),
-                            "network": (config_dir / "network.json").exists(),
-                            "safety": (config_dir / "safety.json").exists(),
-                        },
-                        "calibration_report_exists": calibration_report.exists(),
+                        "input_link_state": latest.get("input_link_state") if latest else None,
+                        "startup_checks": checks,
+                        "config_files": checks["config_files"],
+                        "config_issues": checks["config_issues"],
+                        "calibration_report_exists": checks["calibration_report_exists"],
                     },
                 }
             )
@@ -111,6 +185,7 @@ class ApiHandler(BaseHTTPRequestHandler):
                     "ok": True,
                     "data": {
                         "service": "car_control_stable",
+                        "schema_version": 2,
                         "endpoints": [
                             "/api/v1/health",
                             "/api/v1/telemetry/latest",

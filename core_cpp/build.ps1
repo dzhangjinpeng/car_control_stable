@@ -10,6 +10,8 @@ $Sources = @(
     "core_cpp\src\app_config.cpp",
     "core_cpp\src\car_controller.cpp",
     "core_cpp\src\damiao_motor_client.cpp",
+    "core_cpp\src\drive_smoothing.cpp",
+    "core_cpp\src\input_filter.cpp",
     "core_cpp\src\input_source.cpp",
     "core_cpp\src\main.cpp",
     "core_cpp\src\mock_motor_client.cpp",

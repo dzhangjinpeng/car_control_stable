@@ -47,6 +47,8 @@ struct CliOptions {
     std::string safety_config = "configs/safety.json";
     std::string input_config = "configs/input.json";
     std::string network_config = "configs/network.json";
+    std::string control_profile = "";
+    std::string control_profiles = "configs/control_profiles.json";
     std::string telemetry_file = "telemetry.jsonl";
 };
 
@@ -67,6 +69,8 @@ void print_usage() {
         << "  --gamepad-device PATH          Override Linux joystick device from input config.\n"
         << "  --max-loops N                  Number of control loops. Default: 1000.\n"
         << "  --control-config PATH          Control config JSON path.\n"
+        << "  --control-profile NAME         Apply profile from control_profiles.json.\n"
+        << "  --control-profiles PATH        Control profiles JSON path.\n"
         << "  --hardware-config PATH         Hardware config JSON path.\n"
         << "  --safety-config PATH           Safety config JSON path.\n"
         << "  --input-config PATH            Input config JSON path.\n"
@@ -120,6 +124,10 @@ CliOptions parse_args(int argc, char** argv) {
             options.max_loops = static_cast<std::uint64_t>(std::stoull(require_value(arg)));
         } else if (arg == "--control-config") {
             options.control_config = require_value(arg);
+        } else if (arg == "--control-profile" || arg == "--profile") {
+            options.control_profile = require_value(arg);
+        } else if (arg == "--control-profiles") {
+            options.control_profiles = require_value(arg);
         } else if (arg == "--hardware-config") {
             options.hardware_config = require_value(arg);
         } else if (arg == "--safety-config") {
@@ -335,7 +343,7 @@ int main(int argc, char** argv) {
 
         const CliOptions options = parse_args(argc, argv);
         AppConfig config;
-        config.control = load_control_config(options.control_config);
+        config.control = load_control_config(options.control_config, options.control_profile, options.control_profiles);
         config.hardware = load_hardware_config(options.hardware_config);
         config.safety = load_safety_config(options.safety_config);
         config.input = load_input_config(options.input_config);
@@ -400,7 +408,9 @@ int main(int argc, char** argv) {
                 frame.remote_seq = input_source->remote_seq();
                 frame.remote_latency_s = input_source->remote_latency_s();
                 frame.remote_stale = input_source->remote_stale();
-                frame.input = input;
+                frame.steering_locked = controller.steering_locked();
+                frame.drive_direction_name = controller.drive_direction_name();
+                frame.input = controller.last_input();
                 frame.command = feedback;
                 frame.safety = safety_state;
                 telemetry.write(frame);

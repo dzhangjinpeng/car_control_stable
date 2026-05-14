@@ -63,6 +63,8 @@ struct LoopTelemetry {
     int remote_seq = -1;
     double remote_latency_s = -1.0;
     bool remote_stale = false;
+    bool steering_locked = false;
+    std::string drive_direction_name = "auto";
     DriverInput input;
     MotorCommand command;
     SafetyState safety;

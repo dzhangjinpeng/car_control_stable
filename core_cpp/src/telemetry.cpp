@@ -62,7 +62,9 @@ void JsonlTelemetryWriter::write(const LoopTelemetry& frame) {
     out << "\"input_link_state\":\"" << frame.input_link_state << "\","
         << "\"remote_seq\":" << frame.remote_seq << ","
         << "\"remote_latency_s\":" << frame.remote_latency_s << ","
-        << "\"remote_stale\":" << json_bool(frame.remote_stale) << ",";
+        << "\"remote_stale\":" << json_bool(frame.remote_stale) << ","
+        << "\"steering_locked\":" << json_bool(frame.steering_locked) << ","
+        << "\"drive_direction_name\":\"" << frame.drive_direction_name << "\",";
     append_input_json(out, frame.input);
     out << ",\"safety\":{"
         << "\"emergency_stop\":" << json_bool(frame.safety.emergency_stop) << ","
@@ -86,6 +88,8 @@ std::string telemetry_summary(const LoopTelemetry& frame) {
         << " duration_ms=" << std::fixed << std::setprecision(3) << frame.loop_duration_ms
         << " input=" << frame.input_source
         << " link=" << frame.input_link_state
+        << " steering_locked=" << (frame.steering_locked ? "true" : "false")
+        << " direction=" << frame.drive_direction_name
         << " emergency=" << (frame.safety.emergency_stop ? "true" : "false");
     if (!frame.command.drive_motors.empty()) {
         out << " drive0_target=" << std::setprecision(3) << frame.command.drive_motors.front().target;
