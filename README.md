@@ -20,12 +20,12 @@
 
 ## 文档入口
 
-- 使用教程：`docs/????.md`
-- 参数调节说明：`docs/????.md` 的“常用参数怎么调”
-- 控制方式说明：`docs/??????.md`
-- 现场检查清单：`docs/??????.md`
-- 架构说明：`docs/????.md`
-- 后续扩展机械臂、升降台：`docs/??????.md`
+- 使用教程：[docs/使用教程.md](docs/使用教程.md)
+- 参数调节说明：[docs/使用教程.md](docs/使用教程.md) 的“常用参数怎么调”
+- 控制方式说明：[docs/控制方式说明.md](docs/控制方式说明.md)
+- 现场检查清单：[docs/现场检查清单.md](docs/现场检查清单.md)
+- 架构说明：[docs/架构说明.md](docs/架构说明.md)
+- 后续扩展机械臂、升降台：[docs/后续扩展说明.md](docs/后续扩展说明.md)
 
 ## 真机启动
 
@@ -56,7 +56,7 @@ CAR_INPUT=hybrid ./scripts/start_car.sh
 详细控制方式看：
 
 ```text
-docs/??????.md
+docs/控制方式说明.md
 ```
 
 ## Windows 本地 mock
