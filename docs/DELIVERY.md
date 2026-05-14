@@ -28,11 +28,18 @@ car_control_stable/
 ## 本地验证顺序
 
 ```powershell
+.\scripts\check_and_start.ps1 -Target mock -InputMode demo -ControlProfile conservative
 .\core_cpp\build.ps1
 .\build\manual\car_control_core.exe --mock --input demo --mode mode2 --max-loops 1000 --telemetry-file logs\mock_telemetry.jsonl
 .\build\manual\car_control_core.exe --mock --input demo --mode mode2 --control-profile conservative --max-loops 1000 --telemetry-file logs\profile_telemetry.jsonl
 .\scripts\run_api.ps1
 .\scripts\send_remote_demo.ps1
+```
+
+只检查配置：
+
+```powershell
+python .\tools_python\config_check.py --target mock --input demo --control-profile conservative
 ```
 
 ## 真机前检查
@@ -43,6 +50,12 @@ car_control_stable/
 - `inverted_drive_motor_ids` 已通过低速点动确认
 - `/dev/input/js0` 或手柄设备路径正确
 - 达妙串口和 CANFD 连接正常
+
+板端一键检查并启动：
+
+```bash
+TARGET=hardware CAR_INPUT=gamepad CONTROL_PROFILE=conservative ./scripts/check_and_start.sh
+```
 
 ## 校准流程
 

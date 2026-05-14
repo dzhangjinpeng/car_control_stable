@@ -20,6 +20,24 @@
 
 ## Windows 本地跑法
 
+一键检查配置、编译、启动核心和诊断 API：
+
+```powershell
+.\scripts\check_and_start.ps1
+```
+
+指定控制档位：
+
+```powershell
+.\scripts\check_and_start.ps1 -ControlProfile conservative
+```
+
+只做配置检查：
+
+```powershell
+python .\tools_python\config_check.py --target mock --input demo --control-profile conservative
+```
+
 ```powershell
 .\core_cpp\build.ps1
 .\build\manual\car_control_core.exe --mock --input demo --mode mode2 --max-loops 1000 --telemetry-file logs\mock_telemetry.jsonl
@@ -43,6 +61,12 @@ http://127.0.0.1:8765/
 ```powershell
 .\build\manual\car_control_core.exe --mock --input remote --mode mode2 --max-loops 0 --telemetry-file logs\remote_telemetry.jsonl
 .\scripts\send_remote_demo.ps1
+```
+
+板端一键检查并启动：
+
+```bash
+TARGET=hardware CAR_INPUT=gamepad CONTROL_PROFILE=conservative ./scripts/check_and_start.sh
 ```
 
 ## 校准
